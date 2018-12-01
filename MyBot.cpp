@@ -119,23 +119,15 @@ void updateDestination(FleetShip &ship, int DIM, shared_ptr<Player> me, vector<C
 	}
 }
 
-void moveShip(FleetShip &ship) {
+void moveShip(FleetShip &ship, Game &game, vector<Command> &command_queue) {
 	int x = ship.ship->position.x;
 	if (x % 4 != 3 && ship.state != 2) {
-		//move ship
+		command_queue.push_back(ship.ship->move(game.game_map->naive_navigate(ship.ship, ship.destination)));
 	}
 }
 
 
 int main(int argc, char* argv[]) {
-	unsigned int rng_seed;
-	if (argc > 1) {
-		rng_seed = static_cast<unsigned int>(stoul(argv[1]));
-	}
-	else {
-		rng_seed = static_cast<unsigned int>(time(nullptr));
-	}
-	mt19937 rng(rng_seed);
 	Game game;
 	int DIM = game.game_map->cells.size();
 	for (int i = 0; i < DIM; i += 4)
@@ -166,17 +158,50 @@ int main(int argc, char* argv[]) {
 	stdDev /= (DIM*DIM);
 	stdDev = sqrt(stdDev);
 	minHal = meanHal - 2 * stdDev;
+
+
 	// At this point "game" variable is populated with initial map data.
 	// This is a good place to do computationally expensive start-up pre-processing.
 	// As soon as you call "ready" function below, the 2 second per turn timer will start.
 	game.ready("MyCppBot");
-	log::log("Successfully created bot! My Player ID is " + to_string(game.my_id) + ". Bot rng seed is " + to_string(rng_seed) + ".");
+	log::log("Successfully created bot! My Player ID is " + to_string(game.my_id) ".");
 	int init = 0;
+
+	int start = 0;
 	for (;;) {
 		game.update_frame();
 		shared_ptr<Player> me = game.me;
 		unique_ptr<GameMap>& game_map = game.game_map;
 		vector<Command> command_queue;
+
+		if(start < 4 && !game_map->at(me->shipyard)->is_occupied()){
+			for (const auto& ship_iterator : me->ships) {
+				shared_ptr<Ship> ship = ship_iterator.second;
+				bool added = false;
+            	for (EntityId id : addedShips)
+            	{
+					if (id == ship->id)
+                	added = true;
+            	}
+            	if (!added)
+            	{
+                	addToFleet(ship);
+            	}
+			}
+
+			for(Fleet fleet:fleets){
+				for(FleetShip fship:fleet.ships){
+					//void updateDestination(FleetShip &ship, int DIM, shared_ptr<Player> me, vector<Command> &command_queue, Game &game) {
+					updateDestination(fship, DIM, me, command_queue, game);
+					//void moveShip(FleetShip &ship, Game &game) {
+					moveShip(fship, gam, command_queue);
+				}
+			}
+
+			command_queue.push_back(me->shipyard->spawn());
+			start++;
+		}
+
 		for (const auto& ship_iterator : me->ships) {
 			shared_ptr<Ship> ship = ship_iterator.second;
 			bool added = false;
@@ -190,29 +215,72 @@ int main(int argc, char* argv[]) {
                 addToFleet(ship);
             }
 		}
-		for (Fleet fleet : fleets)
-        {
-            for (FleetShip fship: fleet.ships)
-            {
-                if (game_map->at(fship.ship)->position != fship.destination)
-                {
-                    command_queue.push_back(fship.ship->move(game_map->naive_navigate(fship.ship, fship.destination)));
-                }
-                else
-                    command_queue.push_back(fship.ship->stay_still());
-            }
-        }
-		if (
-			game.turn_number <= 200 &&
-			me->ships.size() < 4 &&
-			me->halite >= constants::SHIP_COST &&
-			!game_map->at(me->shipyard)->is_occupied())
-		{
-			command_queue.push_back(me->shipyard->spawn());
+
+		for(Fleet fleet:fleets){
+			for(FleetShip fship:fleet.ships){
+				//void updateDestination(FleetShip &ship, int DIM, shared_ptr<Player> me, vector<Command> &command_queue, Game &game) {
+				updateDestination(fship, DIM, me, command_queue, game);
+				//void moveShip(FleetShip &ship, Game &game) {
+				moveShip(fship, game);
+			}
 		}
+
+		
 		if (!game.end_turn(command_queue)) {
 			break;
 		}
 	}
 	return 0;
 }
+
+/*
+int main(int argc, char* argv[]) {
+    unsigned int rng_seed;
+    if (argc > 1) {
+        rng_seed = static_cast<unsigned int>(stoul(argv[1]));
+    } else {
+        rng_seed = static_cast<unsigned int>(time(nullptr));
+    }
+    mt19937 rng(rng_seed);
+
+    Game game;
+    // At this point "game" variable is populated with initial map data.
+    // This is a good place to do computationally expensive start-up pre-processing.
+    // As soon as you call "ready" function below, the 2 second per turn timer will start.
+    game.ready("MyCppBot");
+
+    log::log("Successfully created bot! My Player ID is " + to_string(game.my_id) + ". Bot rng seed is " + to_string(rng_seed) + ".");
+
+    for (;;) {
+        game.update_frame();
+        shared_ptr<Player> me = game.me;
+        unique_ptr<GameMap>& game_map = game.game_map;
+
+        vector<Command> command_queue;
+
+        for (const auto& ship_iterator : me->ships) {
+            shared_ptr<Ship> ship = ship_iterator.second;
+            if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
+                Direction random_direction = ALL_CARDINALS[rng() % 4];
+                command_queue.push_back(ship->move(random_direction));
+            } else {
+                command_queue.push_back(ship->stay_still());
+            }
+        }
+
+        if (
+            game.turn_number <= 200 &&
+            me->halite >= constants::SHIP_COST &&
+            !game_map->at(me->shipyard)->is_occupied())
+        {
+            command_queue.push_back(me->shipyard->spawn());
+        }
+
+        if (!game.end_turn(command_queue)) {
+            break;
+        }
+    }
+
+    return 0;
+}
+*/
