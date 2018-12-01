@@ -61,6 +61,26 @@ int nextNode(FleetShip &ship, int DIM)
     return -1;
 }
 
+
+void addToFleet(shared_ptr<Ship> ship)
+{
+    if (fleets.size() == 0 || fleets.back().ships.size() == 4)
+    {
+        for (unsigned int i = 0; i < nodes.size(); ++i)
+        {
+            int initNode = -1;
+            if (nodes[nextNodes].fleet == -1)
+            {
+                initNode = i;
+                nodes[i].fleet = fleets.size();
+                break;
+            }
+        }
+        fleets.push_back(Fleet{{}, fleets.size(), {initNode}});
+    }
+	fleets.back().ships.push_back(FleetShip{ship, Position(nodes[i].position.x, nodes[i].y + fleets.back().ships.size(), fleets.back().ships.size(), 1, fleets.back().id});
+}
+
 Position updateDestination(FleetShip ship, int DIM, shared_ptr<Player> me) {
 	int posx = ship.ship->pos.x;
 	int posy = ship.ship->pos.y;
@@ -161,11 +181,29 @@ int main(int argc, char* argv[]) {
 		for (const auto& ship_iterator : me->ships) {
 			shared_ptr<Ship> ship = ship_iterator.second;
 
+			bool added = false;
+            		for (EntityId id : addedShips)
+            		{
+                		if (id == ship.id)
+                    		added = true;
+            		}
+            		if (!added)
+            		{
+                		addToFleet(ship);
+            		}
 			
+			if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
+				Direction random_direction = ALL_CARDINALS[rng() % 4];
+				command_queue.push_back(ship->move(random_direction));
+			}
+			else {
+				command_queue.push_back(ship->stay_still());
+			}
 		}
 
 		if (
 			game.turn_number <= 200 &&
+			me->ships.size() < 4 &&
 			me->halite >= constants::SHIP_COST &&
 			!game_map->at(me->shipyard)->is_occupied())
 		{
