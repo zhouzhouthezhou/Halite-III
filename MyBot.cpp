@@ -40,7 +40,7 @@ int minHal = 0;
 
 int nextNode(FleetShip &ship, int DIM)
 {
-    Position pos = ship.ship->pos;
+    Position pos = ship.ship->position;
     int currentNode = (pos.x / 4) + (pos.y / 4) * (DIM / 4);
     for (int i : fleets[ship.fleet].nodes)
     {
@@ -77,33 +77,11 @@ void addToFleet(shared_ptr<Ship> ship)
         }
         fleets.push_back(Fleet{{}, fleets.size(), {initNode}});
     }
-	fleets.back().ships.push_back(FleetShip{ship, Position(nodes[i].position.x, nodes[i].y + fleets.back().ships.size(), fleets.back().ships.size(), 1, fleets.back().id});
+	fleets.back().ships.push_back(FleetShip{ship, Position(nodes[i].position.x, nodes[i].y + fleets.back().ships.size(), fleets.back().ships.size(), 1, fleets.back().id}));
 }
 
-Position updateDestination(FleetShip ship, int DIM, shared_ptr<Player> me) {
-	int posx = ship.ship->pos.x;
-	int posy = ship.ship->pos.y;
-	int currentNode = (pos.x / 4) + (pos.y / 4) * (DIM / 4);
-
-	if (x % 4 == 3 && ship.state == 2) {
-		Node n = nodes[nextNode(ship, DIM)];
-		ship.destination = Position(n.position.x, n.position.y + posy);
-		ship.state == 3;
-	}
-	else if (ship.state == 2){
-		mine(ship);
-	}
-	else if (ship.ship->halite == 1000) {
-		ship.state == 0;
-		ship.destination = me->shipyard->position;
-	}
-	else if (ship.state == 3 && ship.destination == ship.ship->pos) {
-		ship.state == 2;
-	}
-}
-
-void mine(FleetShip ship, Game game) {
-	if (game.game_map.at(Position(i, j))->halite < minHal) {
+void mine(FleetShip ship, Game game, vector<Command> command_queue) {
+	if (game.game_map->at(ship.ship->position)->halite < minHal) {
 		command_queue.push_back(ship.ship->move(Direction.East));
 	}
 	else {
@@ -111,7 +89,30 @@ void mine(FleetShip ship, Game game) {
 	}
 }
 
+Position updateDestination(FleetShip ship, int DIM, shared_ptr<Player> me, vector<Command> command_queue, Game game) {
+	int posx = ship.ship->position.x;
+	int posy = ship.ship->position.y;
+	int currentNode = (posx / 4) + (posy / 4) * (DIM / 4);
+
+	if (posx % 4 == 3 && ship.state == 2) {
+		Node n = nodes[nextNode(ship, DIM)];
+		ship.destination = Position(n.position.x, n.position.y + posy);
+		ship.state = 3;
+	}
+	else if (ship.state == 2){
+		mine(ship, game, command_queue);
+	}
+	else if (ship.ship->halite == 1000) {
+		ship.state = 0;
+		ship.destination = me->shipyard->position;
+	}
+	else if (ship.state == 3 && ship.destination == ship.ship->position) {
+		ship.state = 2;
+	}
+}
+
 void moveShip(FleetShip ship) {
+	int x = ship.ship->position.x;
 	if (x % 4 != 3 && ship.state != 2) {
 		//move ship
 	}
