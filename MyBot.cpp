@@ -29,7 +29,7 @@ struct FleetShip
 
 struct Fleet
 {
-	FleetShip ships[4];
+	vector<FleetShip> ships;
 	int id;
 	vector<int> nodes;
 };
@@ -47,13 +47,13 @@ int nextNode(FleetShip &ship, int DIM)
         if (i == currentNode)
             return i;
     }
-    int[] nextNodes = {currentNode + 1, currentNode - 1, currentNode - DIM/4, currentNode + DIM/4};
-    sort(nextNodes.begin(), nextNodes.end, bool func(int a, int b) { return nodes[a].halite > nodes[b].halite});
+    vector<int> nextNodes = {currentNode + 1, currentNode - 1, currentNode - DIM/4, currentNode + DIM/4};
+    sort(nextNodes.begin(), nextNodes.end(), [] (int a, int b) { return nodes[a].halite > nodes[b].halite;});
     for (int i : nextNodes)
     {
         if (nodes[i].fleet == -1)
         {
-            fleets[ship.fleet].push_back(i);
+            fleets[ship.fleet].nodes.push_back(i);
             nodes[i].fleet = ship.fleet;
             return i;
         }
@@ -65,19 +65,25 @@ void addToFleet(shared_ptr<Ship> ship)
 {
     if (fleets.size() == 0 || fleets.back().ships.size() == 4)
     {
-        for (unsigned int i = 0; i < nodes.size(); ++i)
+        for (int i = 0; i < nodes.size(); ++i)
         {
-            int initNode = -1;
-            if (nodes[nextNodes].fleet == -1)
+			int initNode = -1;
+            if (nodes[i].fleet == -1)
             {
                 initNode = i;
                 nodes[i].fleet = fleets.size();
                 break;
             }
         }
-        fleets.push_back(Fleet{{}, fleets.size(), {initNode}});
+        fleets.push_back(Fleet{ vector<FleetShip>{}, 
+			static_cast<int>(fleets.size()), 
+			vector<int>{ fleets.back().nodes.back() } });
     }
-	fleets.back().ships.push_back(FleetShip{ship, Position(nodes[i].position.x, nodes[i].y + fleets.back().ships.size(), fleets.back().ships.size(), 1, fleets.back().id}));
+	fleets.back().ships.push_back(FleetShip{ ship, 
+		Position(nodes[fleets.back().nodes.back()].position.x, nodes[fleets.back().nodes.back()].position.x + fleets.back().ships.size()), 
+		static_cast<int>(fleets.back().ships.size()), 
+		1, 
+		fleets.back().id });
 }
 
 void mine(FleetShip ship, Game game, vector<Command> command_queue) {
