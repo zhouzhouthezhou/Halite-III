@@ -124,7 +124,18 @@ int main(int argc, char* argv[]) {
 
 		for (const auto& ship_iterator : me->ships) {
 			shared_ptr<Ship> ship = ship_iterator.second;
-
+			
+			bool added = false;
+            		for (EntityId id : addedShips)
+            		{
+                		if (id == ship.id)
+                    		added = true;
+            		}
+            		if (!added)
+            		{
+                		addToFleet(ship);
+            		}
+			
 			if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
 				Direction random_direction = ALL_CARDINALS[rng() % 4];
 				command_queue.push_back(ship->move(random_direction));
@@ -136,6 +147,7 @@ int main(int argc, char* argv[]) {
 
 		if (
 			game.turn_number <= 200 &&
+			me->ships.size() < 4 &&
 			me->halite >= constants::SHIP_COST &&
 			!game_map->at(me->shipyard)->is_occupied())
 		{
