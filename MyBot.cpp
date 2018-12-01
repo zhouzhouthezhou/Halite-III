@@ -35,22 +35,29 @@ struct Fleet
 
 vector<Node> nodes;
 vector<Fleet> fleets;
-
-int nextNode(FleetShip ship, int DIM)
+int nextNode(FleetShip &ship, int DIM)
 {
-	Position pos = ship.ship->pos;
-	int currentNode = (pos.x / 4) + (pos.y / 4) * (DIM / 4);
-	int[] nextNodes = { currentNode + 1, currentNode - 1, currentNode - DIM / 4, currentNode + DIM / 4 };
-	sort(nextNodes.begin(), nextNodes.end, bool func(int a, int b) { return nodes[a].halite > nodes[b].halite });
-	for (int i : nextNodes)
-	{
-		if (nodes[nextNodes].fleet == -1)
-		{
-			return i;
-		}
-	}
-	return -1;
+    Position pos = ship.ship->pos;
+    int currentNode = (pos.x / 4) + (pos.y / 4) * (DIM / 4);
+    for (int i : fleets[ship.fleet].nodes)
+    {
+        if (i == currentNode)
+            return i;
+    }
+    int[] nextNodes = {currentNode + 1, currentNode - 1, currentNode - DIM/4, currentNode + DIM/4};
+    sort(nextNodes.begin(), nextNodes.end, bool func(int a, int b) { return nodes[a].halite > nodes[b].halite});
+    for (int i : nextNodes)
+    {
+        if (nodes[nextNodes].fleet == -1)
+        {
+            fleets[ship.fleet].push_back(i);
+            nodes[i].fleet = ship.fleet;
+            return i;
+        }
+    }
+    return -1;
 }
+
 
 int main(int argc, char* argv[]) {
 	unsigned int rng_seed;
