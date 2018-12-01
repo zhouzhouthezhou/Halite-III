@@ -48,7 +48,7 @@ int nextNode(FleetShip &ship, int DIM)
     sort(nextNodes.begin(), nextNodes.end, bool func(int a, int b) { return nodes[a].halite > nodes[b].halite});
     for (int i : nextNodes)
     {
-        if (nodes[nextNodes].fleet == -1)
+        if (nodes[i].fleet == -1)
         {
             fleets[ship.fleet].push_back(i);
             nodes[i].fleet = ship.fleet;
@@ -58,6 +58,24 @@ int nextNode(FleetShip &ship, int DIM)
     return -1;
 }
 
+void addToFleet(shared_ptr<Ship> ship)
+{
+    if (fleets.size() == 0 || fleets.back().ships.size() == 4)
+    {
+        for (unsigned int i = 0; i < nodes.size(); ++i)
+        {
+            int initNode = -1;
+            if (nodes[nextNodes].fleet == -1)
+            {
+                initNode = i;
+                nodes[i].fleet = fleets.size();
+                break;
+            }
+        }
+        fleets.push_back(Fleet{{}, fleets.size(), {initNode}});
+    }
+	fleets.back().ships.push_back(FleetShip{ship, Position(nodes[i].position.x, nodes[i].y + fleets.back().ships.size(), fleets.back().ships.size(), 1, fleets.back().id});
+}
 
 int main(int argc, char* argv[]) {
 	unsigned int rng_seed;
