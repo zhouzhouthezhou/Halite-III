@@ -180,24 +180,28 @@ int main(int argc, char* argv[]) {
 		for (const auto& ship_iterator : me->ships) {
 			shared_ptr<Ship> ship = ship_iterator.second;
 			bool added = false;
-            		for (EntityId id : addedShips)
-            		{
-                		if (id == ship->id)
-                    		added = true;
-            		}
-            		if (!added)
-            		{
-                		addToFleet(ship);
-            		}
-			
-			if (game_map->at(ship)->halite < constants::MAX_HALITE / 10 || ship->is_full()) {
-				Direction random_direction = ALL_CARDINALS[rng() % 4];
-				command_queue.push_back(ship->move(random_direction));
-			}
-			else {
-				command_queue.push_back(ship->stay_still());
-			}
+            for (EntityId id : addedShips)
+            {
+				if (id == ship->id)
+                added = true;
+            }
+            if (!added)
+            {
+                addToFleet(ship);
+            }
 		}
+		for (Fleet fleet : fleets)
+        {
+            for (FleetShip fship: fleet.ships)
+            {
+                if (game_map->at(fship.ship)->position != fship.destination)
+                {
+                    command_queue.push_back(fship.ship->move(game_map->naive_navigate(fship.ship, fship.destination)));
+                }
+                else
+                    command_queue.push_back(fship.ship->stay_still());
+            }
+        }
 		if (
 			game.turn_number <= 200 &&
 			me->ships.size() < 4 &&
@@ -212,4 +216,3 @@ int main(int argc, char* argv[]) {
 	}
 	return 0;
 }
-
