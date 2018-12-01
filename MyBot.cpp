@@ -88,7 +88,7 @@ void addToFleet(shared_ptr<Ship> ship)
 
 void mine(FleetShip ship, Game game, vector<Command> command_queue) {
 	if (game.game_map->at(ship.ship->position)->halite < minHal) {
-		command_queue.push_back(ship.ship->move(Direction.East));
+		command_queue.push_back(ship.ship->move(Direction::EAST));
 	}
 	else {
 		command_queue.push_back(ship.ship->stay_still());
