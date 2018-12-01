@@ -5,6 +5,7 @@
 #include <random>
 #include <ctime>
 #include <fstream>
+#include <math.h>
 
 using namespace std;
 using namespace hlt;
@@ -35,6 +36,8 @@ struct Fleet
 
 vector<Node> nodes;
 vector<Fleet> fleets;
+int minHal = 0;
+
 int nextNode(FleetShip &ship, int DIM)
 {
     Position pos = ship.ship->pos;
@@ -58,6 +61,7 @@ int nextNode(FleetShip &ship, int DIM)
     return -1;
 }
 
+
 void addToFleet(shared_ptr<Ship> ship)
 {
     if (fleets.size() == 0 || fleets.back().ships.size() == 4)
@@ -75,6 +79,43 @@ void addToFleet(shared_ptr<Ship> ship)
         fleets.push_back(Fleet{{}, fleets.size(), {initNode}});
     }
 	fleets.back().ships.push_back(FleetShip{ship, Position(nodes[i].position.x, nodes[i].y + fleets.back().ships.size(), fleets.back().ships.size(), 1, fleets.back().id});
+}
+
+Position updateDestination(FleetShip ship, int DIM, shared_ptr<Player> me) {
+	int posx = ship.ship->pos.x;
+	int posy = ship.ship->pos.y;
+	int currentNode = (pos.x / 4) + (pos.y / 4) * (DIM / 4);
+
+	if (x % 4 == 3 && ship.state == 2) {
+		Node n = nodes[nextNode(ship, DIM)];
+		ship.destination = Position(n.position.x, n.position.y + posy);
+		ship.state == 3;
+	}
+	else if (ship.state == 2){
+		mine(ship);
+	}
+	else if (ship.ship->halite == 1000) {
+		ship.state == 0;
+		ship.destination = me->shipyard->position;
+	}
+	else if (ship.state == 3 && ship.destination == ship.ship->pos) {
+		ship.state == 2;
+	}
+}
+
+void mine(FleetShip ship, Game game) {
+	if (game.game_map.at(Position(i, j))->halite < minHal) {
+		command_queue.push_back(ship.ship->move(Direction.East));
+	}
+	else {
+		command_queue.push_back(ship.ship->stay_still());
+	}
+}
+
+void moveShip(FleetShip ship) {
+	if (x % 4 != 3 && ship.state != 2) {
+		//move ship
+	}
 }
 
 int main(int argc, char* argv[]) {
@@ -107,6 +148,21 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	int meanHal = totHal / (DIM*DIM);
+	int stdDev = 0;
+
+	for (unsigned int i = 0; i < DIM; ++i)
+	{
+		for (unsigned int j = 0; j < DIM; ++j)
+		{
+			stdDev += (game.game_map.at(Position(i, j))->halite - meanHal)(game.game_map.at(Position(i, j))->halite - meanHal);
+		}
+	}
+
+	stdDev /= (DIM*DIM);
+	stdDev = sqrt(stDEV);
+	minHal = meanHal - 2 * stdDev;
+
 	// At this point "game" variable is populated with initial map data.
 	// This is a good place to do computationally expensive start-up pre-processing.
 	// As soon as you call "ready" function below, the 2 second per turn timer will start.
@@ -114,7 +170,7 @@ int main(int argc, char* argv[]) {
 	game.ready("MyCppBot");
 
 	log::log("Successfully created bot! My Player ID is " + to_string(game.my_id) + ". Bot rng seed is " + to_string(rng_seed) + ".");
-
+	int init = 0;
 	for (;;) {
 		game.update_frame();
 		shared_ptr<Player> me = game.me;
@@ -124,7 +180,7 @@ int main(int argc, char* argv[]) {
 
 		for (const auto& ship_iterator : me->ships) {
 			shared_ptr<Ship> ship = ship_iterator.second;
-			
+
 			bool added = false;
             		for (EntityId id : addedShips)
             		{
